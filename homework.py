@@ -14,28 +14,8 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
+logger = logging.getLogger(__name__)
 
-def setup_custom_logger(name):
-    """Создать и настроить отдельный логгер для модуля."""
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-
-    if not logger.hasHandlers():
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-
-        file_handler = logging.FileHandler('bot.log', encoding='utf-8')
-        file_handler.setFormatter(formatter)
-
-        logger.addHandler(stream_handler)
-        logger.addHandler(file_handler)
-
-    return logger
-
-
-logger = setup_custom_logger(__name__)
 
 ERROR_NOTIFIED = False
 RETRY_PERIOD = 600
@@ -106,10 +86,12 @@ def send_message(bot, message):
                          text=message,
                          )
         logger.debug(DEBUG_MESSAGE_SENT.format(message=message))
+        return True
     except Exception as error:
         logger.exception(
             EXCEPTION_MESSAGE.format(message=message, error=error)
         )
+        return False
 
 
 def get_api_answer(timestamp):
@@ -200,26 +182,31 @@ def main():
         try:
             response = get_api_answer(timestamp)
             homeworks = check_response(response)
-            message_sent = False
 
             if homeworks:
                 message = parse_status(homeworks[0])
-                send_message(bot, message)
-                message_sent = True
+                if send_message(bot, message):
+                    timestamp = response.get('current_date', timestamp)
             else:
                 logger.debug(NO_NEW_HOMEWORK_LOG)
 
-            if message_sent:
-                timestamp = response.get('current_date', timestamp)
-
         except Exception as error:
             error_formatted = ERROR_MESSAGE.format(error=error)
+            logger.error(error_formatted)
             if error_formatted != last_error_message:
-                send_message(bot, error_formatted)
-                logger.error(error_formatted)
-                last_error_message = error_formatted
+                if send_message(bot, error_formatted):
+                    last_error_message = error_formatted
         time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s %(message)s',
+        level=logging.INFO,
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler('bot.log', encoding='utf-8')
+        ]
+    )
+
     main()
