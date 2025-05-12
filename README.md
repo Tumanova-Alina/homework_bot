@@ -1,5 +1,10 @@
 # homework_bot
 
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![dotenv](https://img.shields.io/badge/dotenv-1.0.0-brightgreen.svg)
+![pyTelegramBotAPI](https://img.shields.io/badge/pyTelegramBotAPI-4.12.0-blue)
+![pytest](https://img.shields.io/badge/pytest-7.4.4-yellow)
+
 ## Описание 
 Бот-ассистент обращается к API сервису Практикум.Домашка и узнаёт статус домашней работы: взята ли домашняя работа в ревью, проверена ли она, а если проверена — то принял её ревьюер или вернул на доработку.
 
